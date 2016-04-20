@@ -15,24 +15,25 @@ Note: `for task in AsyncCollector(f, results, c...) end` is equivalent to
 """
 type AsyncCollector
     f
+    on_error
     results
     enumerator::Enumerate
     ntasks::Int
 end
 
-function AsyncCollector(f, results, c...; ntasks=0)
+function AsyncCollector(f, results, c...; ntasks=0, on_error=nothing)
     if ntasks == 0
         ntasks = 100
     end
-    AsyncCollector(f, results, enumerate(zip(c...)), ntasks)
+    AsyncCollector(f, on_error, results, enumerate(zip(c...)), ntasks)
 end
-
 
 type AsyncCollectorState
     enum_state
     active_count::Int
     task_done::Condition
     done::Bool
+    in_error::Bool
 end
 
 
@@ -49,12 +50,12 @@ wait(state::AsyncCollectorState) = wait(state.task_done)
 # Open a @sync block and initialise iterator state.
 function start(itr::AsyncCollector)
     sync_begin()
-    AsyncCollectorState(start(itr.enumerator),  0, Condition(), false)
+    AsyncCollectorState(start(itr.enumerator),  0, Condition(), false, false)
 end
 
 # Close @sync block when iterator is done.
 function done(itr::AsyncCollector, state::AsyncCollectorState)
-    if !state.done && done(itr.enumerator, state.enum_state)
+    if (!state.done && done(itr.enumerator, state.enum_state)) || state.in_error
         state.done = true
         sync_end()
     end
@@ -72,14 +73,32 @@ function next(itr::AsyncCollector, state::AsyncCollectorState)
 
     # Execute function call and save result asynchronously
     @async begin
-        itr.results[i] = itr.f(args...)
-        state.active_count -= 1
-        notify(state.task_done, nothing)
+        try
+            itr.results[i] = itr.f(args...)
+        catch e
+            try
+                if isa(itr.on_error, Function)
+                    itr.results[i] = itr.on_error(e)
+                else
+                    rethrow(e)
+                end
+            catch e2
+                state.in_error = true
+                notify(state.task_done, e2; error=true)
+
+                # The "notify" above raises an exception if "next" is waiting for tasks to finish.
+                # If the calling task is waiting on sync_end(), the rethrow() below will be captured
+                # by it.
+                rethrow(e2)
+            end
+        finally
+            state.active_count -= 1
+            notify(state.task_done, nothing)
+        end
     end
 
     # Count number of concurrent tasks
     state.active_count += 1
-
     return (nothing, state)
 end
 
@@ -97,8 +116,8 @@ type AsyncGenerator
     collector::AsyncCollector
 end
 
-function AsyncGenerator(f, c...; ntasks=0)
-    AsyncGenerator(AsyncCollector(f, Dict{Int,Any}(), c...; ntasks=ntasks))
+function AsyncGenerator(f, c...; ntasks=0, on_error=nothing)
+    AsyncGenerator(AsyncCollector(f, Dict{Int,Any}(), c...; ntasks=ntasks, on_error=on_error))
 end
 
 
@@ -153,7 +172,7 @@ Transform collection `c` by applying `@async f` to each element.
 
 For multiple collection arguments, apply f elementwise.
 """
-asyncmap(f, c...) = collect(AsyncGenerator(f, c...))
+asyncmap(f, c...; on_error=nothing) = collect(AsyncGenerator(f, c...; on_error=on_error))
 
 
 """
@@ -161,7 +180,7 @@ asyncmap(f, c...) = collect(AsyncGenerator(f, c...))
 
 In-place version of `asyncmap()`.
 """
-asyncmap!(f, c) = (for x in AsyncCollector(f, c, c) end; c)
+asyncmap!(f, c; on_error=nothing) = (for x in AsyncCollector(f, c, c; on_error=on_error) end; c)
 
 
 """
@@ -169,4 +188,4 @@ asyncmap!(f, c) = (for x in AsyncCollector(f, c, c) end; c)
 
 Like `asyncmap()`, but stores output in `results` rather returning a collection.
 """
-asyncmap!(f, r, c1, c...) = (for x in AsyncCollector(f, r, c1, c...) end; r)
+asyncmap!(f, r, c1, c...; on_error=nothing) = (for x in AsyncCollector(f, r, c1, c...; on_error=on_error) end; r)
