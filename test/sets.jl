@@ -230,3 +230,5 @@ let s = Set(1:5)
 end
 
 @test pop!(Set(1:2), 2, nothing) == 2
+
+@test length(Set(['x',120])) == 2
