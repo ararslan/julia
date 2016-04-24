@@ -238,13 +238,6 @@ Divide two integers or rational numbers, giving a `Rational` result.
 Base.(:(//))
 
 """
-    At_mul_B(A, B)
-
-For matrices or vectors ``A`` and ``B``, calculates ``Aᵀ⋅B``.
-"""
-At_mul_B
-
-"""
     methods(f, [types])
 
 Returns the method table for `f`.
@@ -1616,13 +1609,6 @@ choose to defer the display until (for example) the next interactive prompt.
 redisplay
 
 """
-    A_mul_Bc(A, B)
-
-For matrices or vectors ``A`` and ``B``, calculates ``A⋅Bᴴ``.
-"""
-A_mul_Bc
-
-"""
     searchsorted(a, x, [by=<transform>,] [lt=<comparison>,] [rev=false])
 
 Returns the range of indices of `a` which compare as equal to `x` according to the order
@@ -1768,13 +1754,6 @@ Determine whether Julia is running an interactive session.
 isinteractive
 
 """
-    At_mul_Bt(A, B)
-
-For matrices or vectors ``A`` and ``B``, calculates ``Aᵀ⋅Bᵀ``.
-"""
-At_mul_Bt
-
-"""
     sum!(r, A)
 
 Sum elements of `A` over the singleton dimensions of `r`, and write results to `r`.
@@ -1898,16 +1877,6 @@ function is still runnable, and will be restarted immediately if there are no ot
 tasks.
 """
 yield
-
-"""
-    transpose!(dest,src)
-
-Transpose array `src` and store the result in the preallocated array `dest`, which should
-have a size corresponding to `(size(src,2),size(src,1))`. No in-place transposition is
-supported and unexpected results will happen if `src` and `dest` have overlapping memory
-regions.
-"""
-transpose!
 
 """
     isconst([m::Module], s::Symbol) -> Bool
@@ -2802,13 +2771,6 @@ find(A)
 Return a vector of the linear indexes of `A` where `f` returns `true`.
 """
 find(f, A)
-
-"""
-    ctranspose(A)
-
-The conjugate transposition operator (`'`).
-"""
-ctranspose
 
 """
     skip(s, offset)
@@ -5094,13 +5056,6 @@ must be matched by an "unlock"
 lock
 
 """
-    transpose(A)
-
-The transposition operator (`.'`).
-"""
-transpose
-
-"""
     searchsortedfirst(a, x, [by=<transform>,] [lt=<comparison>,] [rev=false])
 
 Returns the index of the first value in `a` greater than or equal to `x`, according to the
@@ -5322,24 +5277,7 @@ Return an iterator over all values in a collection. `collect(values(d))` returns
 values
 
 """
-    A_mul_B!(Y, A, B) -> Y
 
-Calculates the matrix-matrix or matrix-vector product ``A⋅B`` and stores the result in `Y`,
-overwriting the existing value of `Y`. Note that `Y` must not be aliased with either `A` or
-`B`.
-
-```jldoctest
-julia> A=[1.0 2.0; 3.0 4.0]; B=[1.0 1.0; 1.0 1.0]; Y = similar(B); A_mul_B!(Y, A, B);
-
-julia> Y
-2×2 Array{Float64,2}:
- 3.0  3.0
- 7.0  7.0
-```
-"""
-A_mul_B!
-
-"""
     ntuple(f::Function, n)
 
 Create a tuple of length `n`, computing each element as `f(i)`, where `i` is the index of the element.
@@ -7255,16 +7193,6 @@ Like `redirect_stdout`, but for `STDERR`.
 redirect_stderr
 
 """
-    ctranspose!(dest,src)
-
-Conjugate transpose array `src` and store the result in the preallocated array `dest`, which
-should have a size corresponding to `(size(src,2),size(src,1))`. No in-place transposition
-is supported and unexpected results will happen if `src` and `dest` have overlapping memory
-regions.
-"""
-ctranspose!
-
-"""
     object_id(x)
 
 Get a unique integer id for `x`. `object_id(x)==object_id(y)` if and only if `is(x,y)`.
@@ -8572,13 +8500,6 @@ Get the number of available processes.
 nprocs
 
 """
-    Ac_mul_B(A, B)
-
-For matrices or vectors ``A`` and ``B``, calculates ``Aᴴ⋅B``.
-"""
-Ac_mul_B
-
-"""
     qrfact!(A [,pivot=Val{false}])
 
 `qrfact!` is the same as [`qrfact`](:func:`qrfact`) when `A` is a subtype of
@@ -9527,13 +9448,6 @@ For matrices or vectors ``A`` and ``B``, calculates ``Aᵀ`` \\ ``Bᵀ``.
 At_ldiv_Bt
 
 """
-    Ac_mul_Bc(A, B)
-
-For matrices or vectors ``A`` and ``B``, calculates ``Aᴴ Bᴴ``.
-"""
-Ac_mul_Bc
-
-"""
     acotd(x)
 
 Compute the inverse cotangent of `x`, where the output is in degrees.
@@ -9567,13 +9481,6 @@ symbol
 Riemann zeta function ``\\zeta(s)``.
 """
 zeta(s)
-
-"""
-    A_mul_Bt(A, B)
-
-For matrices or vectors ``A`` and ``B``, calculates ``A⋅Bᵀ``.
-"""
-A_mul_Bt
 
 """
     vecnorm(A, [p])
