@@ -1099,6 +1099,7 @@ type Node2562{T}
     value::T
     Node2562(value::T) = new(value)
 end
+Node2562{T}(value::T) = Node2562{T}(value)
 Node2562{T}(value::T, args...) = Node2562{T}(value, args...)
 makenode2562(value) = Node2562(value)
 @test isa(Node2562(0), Node2562)
