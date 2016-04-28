@@ -3853,3 +3853,17 @@ end
 f16089(args...) = typeof(args)
 g16089() = f16089(UInt8)
 @test g16089() === Tuple{DataType}
+
+# issue #16096
+module M16096
+macro iter()
+  quote
+    @inline function foo(sub)
+      it = 1
+    end
+  end
+end
+end
+let ex = expand(:(@M16096.iter))
+    @test !(isa(ex,Expr) && ex.head === :error)
+end
