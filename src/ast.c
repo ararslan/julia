@@ -231,6 +231,7 @@ static jl_ast_context_list_t *jl_ast_ctx_freed = NULL;
 
 static jl_ast_context_t *jl_ast_ctx_enter(void)
 {
+    JL_SIGATOMIC_BEGIN();
     JL_LOCK_NOGC(&flisp_lock);
     jl_ast_context_list_t *node;
     jl_ast_context_t *ctx;
@@ -268,6 +269,7 @@ static jl_ast_context_t *jl_ast_ctx_enter(void)
 
 static void jl_ast_ctx_leave(jl_ast_context_t *ctx)
 {
+    JL_SIGATOMIC_END();
     if (--ctx->ref)
         return;
     JL_LOCK_NOGC(&flisp_lock);
@@ -286,6 +288,8 @@ void jl_init_frontend(void)
     jl_ast_main_ctx.task = jl_current_task;
     jl_ast_context_list_insert(&jl_ast_ctx_using, &jl_ast_main_ctx.list);
     jl_init_ast_ctx(&jl_ast_main_ctx);
+    // To match the one in jl_ast_ctx_leave
+    JL_SIGATOMIC_BEGIN();
     jl_ast_ctx_leave(&jl_ast_main_ctx);
 }
 
