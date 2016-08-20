@@ -7,7 +7,7 @@ tests=($(/tmp/julia/bin/julia -e 'include("choosetests.jl"); t = choosetests(["a
 jlcmd="/tmp/julia/bin/julia --check-bounds=yes runtests.jl"
 
 # Cut my build into pieces, this is my last resort
-cutoff=40
+cutoff=32
 
 case $CIRCLE_NODE_INDEX in
   0) $jlcmd ${tests[@]:0:${cutoff}} ;;
