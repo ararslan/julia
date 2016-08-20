@@ -15,7 +15,7 @@ machine:
 
 checkout:
   post:
-    - git config --global --unset url
+    - git config --global --unset url.ssh://git@github.com:.insteadof
     - make check-whitespace
     - git clone -q git://git.kitenet.net/moreutils
     - echo "override ARCH=$ARCH" >> Make.user
