@@ -1483,4 +1483,7 @@ end
 # Calling promote_op is likely a bad idea, so deprecate its convenience wrapper promote_eltype_op
 @deprecate promote_eltype_op(op, As...) promote_op(op, map(eltype, As)...)
 
+# Rename LibGit2.Oid to LibGit2.GitHash (part of #19839)
+eval(Base.LibGit2, :(Base.@deprecate_binding Oid GitHash))
+
 # End deprecations scheduled for 0.6

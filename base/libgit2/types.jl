@@ -6,11 +6,11 @@ const OID_RAWSZ = 20
 const OID_HEXSZ = OID_RAWSZ * 2
 const OID_MINPREFIXLEN = 4
 
-immutable Oid
+immutable GitHash
     val::NTuple{OID_RAWSZ, UInt8}
-    Oid(val::NTuple{OID_RAWSZ, UInt8}) = new(val)
+    GitHash(val::NTuple{OID_RAWSZ, UInt8}) = new(val)
 end
-Oid() = Oid(ntuple(i->zero(UInt8), OID_RAWSZ))
+GitHash() = GitHash(ntuple(i->zero(UInt8), OID_RAWSZ))
 
 """
     LibGit2.TimeStruct
@@ -207,7 +207,7 @@ Description of one side of a delta.
 Matches the [`git_diff_file`](https://libgit2.github.com/libgit2/#HEAD/type/git_diff_file) struct.
 """
 immutable DiffFile
-    id::Oid
+    id::GitHash
     path::Cstring
     size::Int64
     flags::UInt32
@@ -292,7 +292,7 @@ immutable IndexEntry
     gid::UInt32
     file_size::Int64
 
-    id::Oid
+    id::GitHash
 
     flags::UInt16
     flags_extended::UInt16
@@ -327,7 +327,7 @@ Matches the `git_rebase_operation` struct.
 """
 immutable RebaseOperation
     optype::Cint
-    id::Oid
+    id::GitHash
     exec::Cstring
 end
 Base.show(io::IO, rbo::RebaseOperation) = print(io, "RebaseOperation($(string(rbo.id)))")
@@ -364,7 +364,7 @@ end
 immutable FetchHead
     name::String
     url::String
-    oid::Oid
+    oid::GitHash
     ismerge::Bool
 end
 
