@@ -86,20 +86,13 @@ function revparseid(repo::GitRepo, objname::AbstractString)
     return oid
 end
 
-function get{T <: GitObject}(::Type{T}, r::GitRepo, oid::GitHash, oid_size::Int=OID_HEXSZ)
-    id_ptr  = Ref(oid)
+function get{T<:GitObject}(::Type{T}, r::GitRepo, oid::GitHash)
     obj_ptr_ptr = Ref{Ptr{Void}}(C_NULL)
-    git_otype = getobjecttype(T)
 
-    err = if oid_size != OID_HEXSZ
-        ccall((:git_object_lookup_prefix, :libgit2), Cint,
-              (Ptr{Ptr{Void}}, Ptr{Void}, Ptr{GitHash}, Csize_t, Cint),
-              obj_ptr_ptr, r.ptr, id_ptr, Csize_t(oid_size), git_otype)
-    else
-        ccall((:git_object_lookup, :libgit2), Cint,
-              (Ptr{Ptr{Void}}, Ptr{Void}, Ptr{GitHash}, Cint),
-              obj_ptr_ptr, r.ptr, id_ptr, git_otype)
-    end
+    err = ccall((:git_object_lookup, :libgit2), Cint,
+                (Ptr{Ptr{Void}}, Ptr{Void}, Ptr{GitHash}, Csize_t, Cint),
+                obj_ptr_ptr, r.ptr, Ref(oid), getobjecttype(T))
+
     if err == Int(Error.ENOTFOUND)
         return nothing
     elseif err != Int(Error.GIT_OK)
@@ -111,8 +104,26 @@ function get{T <: GitObject}(::Type{T}, r::GitRepo, oid::GitHash, oid_size::Int=
     return T(obj_ptr_ptr[])
 end
 
-function get{T <: GitObject}(::Type{T}, r::GitRepo, oid::AbstractString)
-    return get(T, r, GitHash(oid), length(oid))
+function get{T<:GitObject}(::Type{T}, r::GitRepo, oid::GitShortHash)
+    obj_ptr_ptr = Ref{Ptr{Void}}(C_NULL)
+
+    err = ccall((:git_object_lookup_prefix, :libgit2), Cint,
+                (Ptr{Ptr{Void}}, Ptr{Void}, Ptr{GitHash}, Csize_t, Cint),
+                obj_ptr_ptr, r.ptr, Ref(oid.hash), oid.len, getobjecttype(T))
+
+    if err == Int(Error.ENOTFOUND)
+        return nothing
+    elseif err != Int(Error.GIT_OK)
+        if obj_ptr_ptr[] != C_NULL
+            finalize(GitAnyObject(obj_ptr_ptr[]))
+        end
+        throw(Error.GitError(err))
+    end
+    return T(obj_ptr_ptr[])
+end
+
+function get{T<:GitObject}(::Type{T}, r::GitRepo, oid::AbstractString)
+    return get(T, r, _githash(oid))
 end
 
 function gitdir(repo::GitRepo)

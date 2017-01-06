@@ -8,6 +8,8 @@ function GitAnnotated(repo::GitRepo, commit_id::GitHash)
     return GitAnnotated(ann_ptr_ptr[])
 end
 
+GitAnnotated(repo::GitRepo, commit_id::GitShortHash) = GitAnnotated(repo, commit_id.hash)
+
 function GitAnnotated(repo::GitRepo, ref::GitReference)
     ann_ref_ref = Ref{Ptr{Void}}(C_NULL)
     @check ccall((:git_annotated_commit_from_ref, :libgit2), Cint,

@@ -340,7 +340,7 @@ function reset!(repo::GitRepo, committish::AbstractString, pathspecs::AbstractSt
 end
 
 """ git reset [--soft | --mixed | --hard] <commit> """
-function reset!(repo::GitRepo, commit::GitHash, mode::Cint = Consts.RESET_MIXED)
+function reset!(repo::GitRepo, commit::AbstractGitHash, mode::Cint = Consts.RESET_MIXED)
     obj = get(GitAnyObject, repo, commit)
     # object must exist for reset
     obj === nothing && throw(GitError(Error.Object, Error.ERROR, "Commit `$(string(commit))` object not found"))

@@ -14,7 +14,7 @@ function tag_delete(repo::GitRepo, tag::AbstractString)
                   (Ptr{Void}, Cstring, ), repo.ptr, tag)
 end
 
-function tag_create(repo::GitRepo, tag::AbstractString, commit::Union{AbstractString,GitHash};
+function tag_create(repo::GitRepo, tag::AbstractString, commit::Union{AbstractString,AbstractGitHash};
                     msg::AbstractString = "",
                     force::Bool = false,
                     sig::Signature = Signature(repo))

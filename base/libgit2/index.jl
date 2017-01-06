@@ -30,7 +30,7 @@ function owner(idx::GitIndex)
     return GitRepo(repo_ptr)
 end
 
-function read_tree!(idx::GitIndex, tree_id::GitHash)
+function read_tree!(idx::GitIndex, tree_id::AbstractGitHash)
     repo = owner(idx)
     tree = get(GitTree, repo, tree_id)
     try

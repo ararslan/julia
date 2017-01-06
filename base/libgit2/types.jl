@@ -6,11 +6,29 @@ const OID_RAWSZ = 20
 const OID_HEXSZ = OID_RAWSZ * 2
 const OID_MINPREFIXLEN = 4
 
-immutable GitHash
+abstract AbstractGitHash
+
+"""
+    LibGit2.GitHash
+
+The unique hash (also known as the object ID or OID) of any Git object.
+Matches the [`git_oid`](https://libgit2.github.com/libgit2/#HEAD/type/git_oid) struct.
+"""
+immutable GitHash <: AbstractGitHash
     val::NTuple{OID_RAWSZ, UInt8}
     GitHash(val::NTuple{OID_RAWSZ, UInt8}) = new(val)
 end
 GitHash() = GitHash(ntuple(i->zero(UInt8), OID_RAWSZ))
+
+"""
+    LibGit2.GitShortHash
+
+An abbreviation with a specified length of a `LibGit2.GitHash`.
+"""
+immutable GitShortHash <: AbstractGitHash
+    hash::GitHash
+    len::Csize_t
+end
 
 """
     LibGit2.TimeStruct
