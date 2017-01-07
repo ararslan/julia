@@ -51,7 +51,7 @@ function commit(repo::GitRepo, msg::AbstractString;
                 author::Signature = Signature(repo),
                 committer::Signature = Signature(repo),
                 tree_id::AbstractGitHash = GitHash(),
-                parent_ids::Vector{AbstractGitHash}=AbstractGitHash[])
+                parent_ids::GitHashVector = GitHash[])
     # Retrieve tree identifier
     if iszero(tree_id)
         tree_id = with(GitIndex, repo) do idx; write_tree!(idx) end

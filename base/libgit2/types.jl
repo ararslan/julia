@@ -30,6 +30,8 @@ immutable GitShortHash <: AbstractGitHash
     len::Csize_t
 end
 
+typealias GitHashVector Union{Vector{GitHash}, Vector{GitShortHash}}
+
 """
     LibGit2.TimeStruct
 
