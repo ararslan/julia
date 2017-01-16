@@ -1,0 +1,75 @@
+machine:
+  environment:
+    ARCH: "i686"
+    BUILDOPTS: "-j4 VERBOSE=1 FORCE_ASSERTIONS=1 LLVM_ASSERTIONS=1"
+    TESTSTORUN: "all"
+    JULIA_CPU_CORES: 2
+    JULIA_TEST_MAXRSS_MB: 600
+    TEST_DIR: "/tmp/julia/share/julia/test"
+    BAR: "bar -i 30"
+    CC: "g++ -m32"
+
+general:
+  branches:
+    only:
+      - aa/circleci
+#       - master
+#       - /release-.*/
+
+checkout:
+  post:
+    - |
+        if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
+            # Workaround because CircleCI doesn't build the merge commit
+            FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/head:pr/${CIRCLE_PR_NUMBER}/head"
+            FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
+            git fetch -u origin ${FETCH_REFS}
+            git checkout -qf "pr/${CIRCLE_PR_NUMBER}/merge"
+            git branch --merged | grep "pr/${CIRCLE_PR_NUMBER}/head" > /dev/null
+        fi
+    - git config --global --unset url.ssh://git@github.com:.insteadof
+    - make check-whitespace
+    - git clone -q git://git.kitenet.net/moreutils
+    - echo "override ARCH=${ARCH}" >> Make.user
+    - echo "override CMAKE=${HOME}/julia/deps/scratch/cmake-3.7.2/bin/cmake" >> Make.user
+    - echo "override CC=${CC}" >> Make.user # to ensure the -m32 flag gets passed
+
+dependencies:
+  pre:
+    - gem install gist # to upload a gist of the log on failure
+    - |
+        sudo dpkg --add-architecture i386
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        sudo apt-get update -y
+        sudo apt-get install -y bar:i386 binutils:i386 gcc-6:i386 gcc-6-multilib:i386 g++-6:i386 g++-6-multilib:i386 \
+            gfortran-6:i386 gfortran-6-multilib:i386 make:i386 libssl-dev:i386
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 1
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 1
+        sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-6 1
+    - gcc --version
+  override:
+    - bash contrib/compile_cmake.sh --circleci 1> cmake.log || gist cmake.log
+    - make -C moreutils mispipe
+    - make ${BUILDOPTS} -C base version_git.jl.phony
+    - moreutils/mispipe "make \${BUILDOPTS} NO_GIT=1 -C deps 1> deps.log" "${BAR}" || gist deps.log
+  cache_directories:
+    - deps/srccache
+    - deps/scratch
+    - deps/usr-staging
+
+compile:
+  override:
+    - make ${BUILDOPTS} NO_GIT=1 prefix=/tmp/julia install | moreutils/ts -s "%.s"
+  post:
+    - make ${BUILDOPTS} NO_GIT=1 build-stats
+    - du -sk /tmp/julia/*
+
+test:
+  override:
+    - /tmp/julia/bin/julia --precompiled=no -e 'true'
+    - /tmp/julia/bin/julia-debug --precompiled=no -e 'true'
+    - /tmp/julia/bin/julia -e 'versioninfo()'
+    - cd ${TEST_DIR} && bash ${HOME}/julia/contrib/circle_balanceload.sh:
+        parallel: true
+  post:
+    - cd ${HOME} && rm -rf julia/deps/build/julia-env
