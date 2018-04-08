@@ -26,7 +26,7 @@ jobs:
           name: Install build dependencies
           command: |
             apk update
-            apk add git openssl build-base gfortran perl linux-headers ccache cmake
+            apk add git openssh build-base gfortran perl linux-headers ccache cmake
       - checkout
       - run:
           name: Set up CI environment
