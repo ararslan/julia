@@ -1,81 +1,73 @@
 version: 2
 workflows:
   version: 2
-  linux-builds:
+  alpine-builds:
     jobs:
-      - build-i686
-      - build-x86_64
+      - alpine-i686
+      - alpine-x86_64
+
+env: &env
+  environment:
+    JULIA_CPU_CORES: 4
+    JULIA_TEST_MAXRSS_MB: 800
+    FORCE_ASSERTIONS: 1
+    LLVM_ASSERTIONS: 1
+    USECCACHE: 1
 
 jobs:
-  build-i686:
+  alpine-x86_64:
     docker:
-      - image: circleci/python:2.7
+      - image: alpine:3.7
         environment:
-          ARCH: i686
-          JULIA_CPU_CORES: 4
-          JULIA_TEST_MAXRSS_MB: 800
+          ARCH: x86_64
+    <<: *env
     steps: &steps
-      - run: | # install build dependencies
-          sudo apt-get install -y g++-4.8-multilib gfortran-4.8-multilib \
-            time ccache bar &&
-          for prog in gcc g++ gfortran; do
-            sudo ln -s /usr/bin/$prog-4.8 /usr/local/bin/$prog;
-          done
-      - checkout # circle ci code checkout step
-# (FIXME: need to unset url."ssh://git@github.com".insteadOf or libgit2 tests fail)
-      - run: | # checkout merge commit, set versioning info and Make.user variables
-          git config --global --unset url."ssh://git@github.com".insteadOf &&
-          if [ -n "$CIRCLE_PULL_REQUEST" ]; then
-            git remote set-url origin git@github.com:JuliaLang/julia.git &&
-            git fetch origin +refs/pull/$(basename $CIRCLE_PULL_REQUEST)/merge &&
-            git checkout -qf FETCH_HEAD;
-          fi &&
-          make -C base version_git.jl.phony &&
-          echo "override ARCH = $ARCH" | tee -a Make.user &&
-          for var in FORCE_ASSERTIONS LLVM_ASSERTIONS USECCACHE NO_GIT; do
-            echo "override $var = 1" | tee -a Make.user;
-          done &&
-          echo "$ARCH $HOME $(date +%Y%W)" | tee /tmp/weeknumber
-      - restore_cache: # silly to take a checksum of the tag file here instead of
-          keys: # its contents but this is the only thing that works on circle
-            - ccache-{{ arch }}-{{ checksum "/tmp/weeknumber" }}
-      - run: | # compile julia deps
-          contrib/download_cmake.sh &&
-          make -j3 -C deps || make
-      - run: | # build julia, output ccache stats when done
-          make -j3 all &&
-          make prefix=/tmp/julia install &&
-          ccache -s &&
-          make build-stats
-      - run: | # move source tree out of the way, run tests from install tree
-          cd .. &&
-          mv project julia-src &&
-          /tmp/julia/bin/julia -e 'versioninfo()' &&
-          /tmp/julia/bin/julia --sysimage-native-code=no -e 'true' &&
-          /tmp/julia/bin/julia-debug --sysimage-native-code=no -e 'true' &&
-          pushd /tmp/julia/share/julia/test &&
-          /tmp/julia/bin/julia --check-bounds=yes runtests.jl all --skip Sockets | bar -i 30 &&
-          /tmp/julia/bin/julia --check-bounds=yes runtests.jl LibGit2/online Pkg/pkg Pkg3/pkg download &&
-          popd &&
-          mkdir /tmp/embedding-test &&
-          make check -C /tmp/julia/share/julia/test/embedding \
-            JULIA=/tmp/julia/bin/julia BIN=/tmp/embedding-test \
-            "$(cd julia-src && make print-CC)" &&
-          mv julia-src project
-#      - run: cd project && make -C doc deploy
       - run:
-          command: sudo dmesg
+          name: Install build dependencies
+          command: |
+            apk update
+            apk add git openssl build-base gfortran perl linux-headers ccache cmake
+      - checkout
+      - run:
+          name: Set up CI environment
+          command: | # For consistency with other CI providers
+            # FIXME: This needs to be unset, or else the libgit2 tests fail
+            git config --global --unset url."ssh://git@github.com".insteadOf
+            # Check out merge commit for consistency with other CI providers
+            if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
+              git remote set-url origin git@github.com:ararslan/julia.git
+              git fetch origin +refs/pull/$(basename ${CIRCLE_PULL_REQUEST})/merge
+              git checkout -qf FETCH_HEAD
+            fi
+            # Set for build cache
+            echo "${ARCH} ${HOME} $(date +%Y%W)" > /tmp/weeknumber
+      - restore_cache:
+          keys:
+            - ccache-{{ arch }}-{{ checksum "/tmp/weeknumber" }}
+      - run:
+          name: Build Julia
+          command: make -j${JULIA_CPU_CORES} all
+      - run:
+          name: Run tests
+          command: ./julia test/runtests.jl all
+      - run:
+          name: Run network-enabled tests
+          command: ./julia test/runtests.jl download LibGit2/online Pkg/pkg Pkg3/pkg
+      - run:
+          name: Run embedding test
+          command: make -C test embedding
+      - run:
+          command: dmesg
           when: on_fail
       - save_cache:
           key: ccache-{{ arch }}-{{ checksum "/tmp/weeknumber" }}
           paths:
             - ~/.ccache
 
-  build-x86_64:
+  alpine-i686:
     docker:
-      - image: circleci/python:2.7
+      - image: i386/alpine:3.7
         environment:
-          ARCH: x86_64
-          JULIA_CPU_CORES: 4
-          JULIA_TEST_MAXRSS_MB: 800
+          ARCH: i686
+    <<: *env
     steps: *steps
