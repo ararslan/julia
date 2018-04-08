@@ -15,11 +15,11 @@ env: &env
     USECCACHE: 1
 
 jobs:
-  alpine-x86_64:
+  alpine-i686:
     docker:
-      - image: alpine:3.7
+      - image: i386/alpine:3.7
         environment:
-          ARCH: x86_64
+          ARCH: i686
     <<: *env
     steps: &steps
       - run:
@@ -64,10 +64,10 @@ jobs:
           paths:
             - ~/.ccache
 
-  alpine-i686:
+  alpine-x86_64:
     docker:
-      - image: i386/alpine:3.7
+      - image: alpine:3.7
         environment:
-          ARCH: i686
+          ARCH: x86_64
     <<: *env
     steps: *steps
