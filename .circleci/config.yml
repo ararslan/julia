@@ -26,7 +26,8 @@ jobs:
           name: Install build dependencies
           command: |
             apk update
-            apk add git openssh build-base gfortran perl linux-headers ccache cmake
+            apk add git openssh build-base gfortran perl linux-headers ccache cmake tar \
+              curl m4 patch pkgconf python2
       - checkout
       - run:
           name: Set up CI environment
