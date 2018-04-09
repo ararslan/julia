@@ -24,7 +24,7 @@ jobs:
       - run:
           name: Install build dependencies
           command: |
-            if [ -z "$(uname -a | grep -i alpine)" ]; then
+            if [ -z "$(ls /etc/*release | grep -i alpine)" ]; then
               apt-get update
               apt-get install build-essential gfortran ccache tar cmake xz-utils curl \
                 python pkg-config m4 patch perl
