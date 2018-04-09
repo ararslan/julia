@@ -1,10 +1,11 @@
 version: 2
 workflows:
   version: 2
-  alpine-builds:
+  linux-builds:
     jobs:
-      - alpine-i686
       - alpine-x86_64
+      - linux-armv7l
+      - linux-aarch64
 
 env: &env
   environment:
@@ -15,23 +16,27 @@ env: &env
     USECCACHE: 1
 
 jobs:
-  alpine-i686:
+  linux-x86_64:
     docker:
-      - image: i386/alpine:3.7
-        environment:
-          ARCH: i686
+      - image: alpine:3.7
     <<: *env
     steps: &steps
       - run:
           name: Install build dependencies
           command: |
-            apk update
-            apk add git openssh build-base gfortran perl linux-headers ccache cmake tar \
-              curl m4 patch pkgconf python2 xz libexecinfo-dev
+            if [ -z "$(uname -a | grep -i alpine)" ]; then
+              apt-get update
+              apt-get install build-essential gfortran ccache tar cmake xz-utils curl \
+                python pkg-config m4 patch perl
+            else
+              apk update
+              apk add git openssh build-base gfortran perl linux-headers ccache cmake tar \
+                curl m4 patch pkgconf python2 xz libexecinfo-dev
+            fi
       - checkout
       - run:
           name: Set up CI environment
-          command: | # For consistency with other CI providers
+          command: |
             # FIXME: This needs to be unset, or else the libgit2 tests fail
             git config --global --unset url."ssh://git@github.com".insteadOf
             # Check out merge commit for consistency with other CI providers
@@ -65,10 +70,14 @@ jobs:
           paths:
             - ~/.ccache
 
-  alpine-x86_64:
+  linux-armv7l:
     docker:
-      - image: alpine:3.7
-        environment:
-          ARCH: x86_64
+      - image: arm32v7/ubuntu:16.04
+    <<: *env
+    steps: *steps
+
+  linux-aarch64:
+    docker:
+      - image: arm64v8/ubuntu:16.04
     <<: *env
     steps: *steps
