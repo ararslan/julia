@@ -27,7 +27,7 @@ jobs:
           command: |
             apk update
             apk add git openssh build-base gfortran perl linux-headers ccache cmake tar \
-              curl m4 patch pkgconf python2 xz
+              curl m4 patch pkgconf python2 xz libexecinfo
       - checkout
       - run:
           name: Set up CI environment
