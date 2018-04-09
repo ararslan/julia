@@ -16,7 +16,7 @@ env: &env
     USECCACHE: 1
 
 jobs:
-  linux-x86_64:
+  alpine-x86_64:
     docker:
       - image: alpine:3.7
     <<: *env
